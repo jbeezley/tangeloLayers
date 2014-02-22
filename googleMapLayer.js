@@ -11,87 +11,91 @@
         return;
     }
 
-    tangelo.GoogleMapLayer = function (elem, options) {
-        // create a google map inside `elem`
-        var map, that, mapOpts;
+    tangelo.GoogleMapLayer = function (element, options) {
+        // create a google map inside `element`
+        var map, mapOpts, svg, ready, view;
         
+        // implementing abstract methods
+        this.pointToLatLng = function (x, y) {
+            var proj, pt, latlng;
+            proj = view.getProjection();
+            pt = new google.maps.Point(x, y);
+            latlng = proj.fromDivPixelToLatLng(pt);
+            return [latlng.lat(), latlng.lng()];
+        };
 
-        // translate options into mapOpts for google interface
-        that = this;
-        
-        mapOpts = {};
-        map = new google.maps.Map(elem, options);
-        this.handlers = {
-            dragstart: function (evt) {
-                google.maps.event.trigger(map, 'dragstart', evt);
-            },
-            dragend: function (evt) {
-                google.maps.event.trigger(map, 'dragend', evt);
-            },
-            drag: function (evt) {
-                // need to save center a dragstart and use panTo
-                //   -- or --
-                // incrementally calculate pixels and use panBy
-                google.maps.event.trigger(map, 'drag', evt);
-                map.panBy(-evt.delta.x, -evt.delta.y);
+        this.latLngToPoint = function (lat, lng) {
+            var proj, pt, latlng;
+            proj = view.getProjection();
+            latlng = new google.maps.LatLng(lat, lng);
+            pt = proj.fromLatLngToContainerPixel(latlng);
+            return [pt.x, pt.y];
+        };
+
+        this.getBounds = function () {
+            var bds, sw, ne;
+            bds = map.getBounds();
+            sw = bds.getSouthWest();
+            ne = bds.getNorthEast();
+            return new this.LatLngBounds(
+                        new this.LatLng(sw.lat(), sw.lng()),
+                        new this.LatLng(ne.lat(), ne.lng())
+                    );
+        };
+
+        this.getSVGLayer = function () {
+            if (!ready) {
+                tangelo.fatalError('GoogleMapLayer', 'getSVGLayer called before map was loaded');
             }
-            /*
-            mouseenter: function (evt) {
-                console.log('mouseenter');
-                google.maps.event.trigger(map, 'mouseenter', evt);
-            },
-            mousedown: function (evt) {
-                console.log('mousedown');
-                google.maps.event.trigger(map, 'mousedown', evt);
-            },
-            mouseup: function (evt) {
-                console.log('mouseup');
-                google.maps.event.trigger(map, 'mouseup', evt);
-            },
-            mousemove: function (evt) {
-                console.log('mousemove');
-                google.maps.event.trigger(map, 'mousemove', evt);
-            },
-            mouseleave: function (evt) {
-                console.log('mouseleave');
-                google.maps.event.trigger(map, 'mouseleave', evt);
-            }
-            */
+            return svg;
+        };
+
+        // I don't like this part, but I need to give subclasses access to the projection methods
+        // there is probably a better way
+        this.Point.prototype.pointToLatLng = this.pointToLatLng;
+        this.LatLng.prototype.latLngToPoint = this.latLngToPoint;
+
+        // implement LatLngBounds abstract methods here...
+
+
+        // all methods are implemented, now start creating the layer
+        
+        // flag to throw an error if any draw events are fired
+        // before the layer is ready
+        ready = false;
+        
+        // convert map options for google interface
+        mapOpts = options;
+
+        // generate the map object
+        map = new google.maps.Map(element, mapOpts);
+
+        // construct an svg overly and attach it to the map
+        function OverlayView() {
+            this.setMap(map);
+        }
+        OverlayView.prototype = new google.maps.OverlayView();
+        OverlayView.prototype.onAdd = function () {
+            svg = document.createElement('svg');
+            svg.style.borderStyle = 'none';
+            svg.style.borderWidth = '0px';
+            svg.style.position = 'absolute';
+            this.getPanes().overlayLayer.appendChild(svg);
+            $(svg).width($(map.getDiv()).width());
+            $(svg).height($(map.getDiv()).height());
         };
         
-        this.attachEvents = function (events) {
-            return;
-            // trigger layer manager events
-            google.maps.event.addListener(map, 'drag', function () {
-                events.drag.trigger();
-            });
-
-            google.maps.event.addListener(map, 'idle', function () {
-                events.idle.trigger();
-            });
-
-            google.maps.event.addListener(map, 'zoom_changed', function () {
-                events.zoom.trigger();
-            });
+        // attach the overlayView to event callbacks to update embedded layers
+        OverlayView.prototype.draw = function () {
+            console.log('draw called in googleMapLayer');
         };
-    };
-    
-    var proto = tangelo.GoogleMapLayer.prototype;
 
-    proto.pointToLatLng = function (point) {
-        var lat, lng;
-        return {
-            lat: lat,
-            lng: lng
-        };
+        // finish initializing the layer once the map layer is ready
+        google.maps.event.addListenerOnce(map, 'idle', function () {
+            view = new OverlayView();
+            ready = true;
+        });
     };
-
-    proto.latLngToPoint = function (latLng) {
-        var x, y;
-        return {
-            x: x,
-            y: y
-        };
-    };
+    tangelo.GoogleMapLayer.prototype = new tangelo.AbstractMapLayer();
 
 }(window.tangelo, window.$, window.google));
