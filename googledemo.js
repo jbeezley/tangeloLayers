@@ -17,7 +17,7 @@
         //google.maps.event.addDomListener(window, 'load', function () {
         //
         gmap.onLoad = function () {
-                var svg = d3.select(gmap.getSVGLayer())
+                var svg = d3.select(gmap.addLayer('d3svg'))
                             .append('svg');
                 
                 var pt = new gmap.LatLng(0, 0);

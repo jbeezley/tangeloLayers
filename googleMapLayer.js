@@ -45,7 +45,7 @@
                     );
         };
 
-        this.getSVGLayer = function () {
+        this.getInnerDiv = function () {
             if (!ready) {
                 tangelo.fatalError('GoogleMapLayer', 'getSVGLayer called before map was loaded');
             }

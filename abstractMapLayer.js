@@ -18,6 +18,7 @@
     // An abstract class defining a mapping layer interface
     tangelo.AbstractMapLayer = function () {
         
+        var layers = {}; // all existing internal layers
         
         // an abstract representation of a position on the map
         // contains both pixel and gis coordinates with callbacks
@@ -86,6 +87,22 @@
             this.union = abstractFunction;
         };
 
+        // Create a new div element for a layer inside the map
+        // Possibly add options to control creation of the div like z-index, etc.
+        this.addLayer = function (name, options) {
+            if (layers.hasOwnProperty(name)) {
+                tangelo.fatalError('Trying to add a layer with a name that already exists');
+            }
+            layers[name] = this.getInnerDiv();
+            return layers[name];
+        };
+        
+        // Return a named layer
+        this.layers = function (name) {
+            return layers[name];
+        };
+
+
         // methods to be implemented by inherited classes
         
         // Returns a pixel location from latitude/longitude:
@@ -100,18 +117,12 @@
         //   function () { ...; return new LatLngBounds(...); }
         // note: could be implemented here with callbacks for x/y offsets 
         //       and width/height of map
-        this.getBounds = abstractFunction;
+        this.bounds = abstractFunction;
         
         // For the following, svg/canvas layers need to come from the map
-        // in order to properly handle mouse events.  Should we have
-        // support for multiple layers or is one enough?
-        
-        // Return an svg element from the mapping layer
-        this.getSVGLayer = abstractFunction;
-
-        // Return a canvas element from the mapping layer
-        this.getCanvasLayer = abstractFunction;
-        
+        // in order to properly handle mouse events.
+        //   function () { ... return div; }
+        this.getInnerDiv = abstractFunction;
     };
 
 }(window.tangelo, window.$));
