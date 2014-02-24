@@ -13,8 +13,10 @@
 
     tangelo.GoogleMapLayer = function (element, options) {
         // create a google map inside `element`
-        var map, mapOpts, svg, ready, view;
+        var map, mapOpts, svg, ready, view, that;
         
+        that = this;
+
         // implementing abstract methods
         this.pointToLatLng = function (x, y) {
             var proj, pt, latlng;
@@ -47,7 +49,7 @@
             if (!ready) {
                 tangelo.fatalError('GoogleMapLayer', 'getSVGLayer called before map was loaded');
             }
-            return svg;
+            return view.getPanes().overlayMouseTarget;
         };
 
         // I don't like this part, but I need to give subclasses access to the projection methods
@@ -76,25 +78,30 @@
         }
         OverlayView.prototype = new google.maps.OverlayView();
         OverlayView.prototype.onAdd = function () {
-            svg = document.createElement('svg');
-            svg.style.borderStyle = 'none';
-            svg.style.borderWidth = '0px';
-            svg.style.position = 'absolute';
-            this.getPanes().overlayLayer.appendChild(svg);
-            $(svg).width($(map.getDiv()).width());
-            $(svg).height($(map.getDiv()).height());
+            svg = this.getPanes().overlayLayer;
+            ready = true;
         };
         
         // attach the overlayView to event callbacks to update embedded layers
         OverlayView.prototype.draw = function () {
+            if (ready && that.onLoad) {
+                that.onLoad();
+                that.onLoad = null;
+            }
             console.log('draw called in googleMapLayer');
         };
 
         // finish initializing the layer once the map layer is ready
-        google.maps.event.addListenerOnce(map, 'idle', function () {
+        //google.maps.event.addListenerOnce(map, 'idle', function () {
             view = new OverlayView();
-            ready = true;
-        });
+        //});
+        
+        this.onLoad = function () {};
+
+        this.callOnIdle = function (f) {
+            google.maps.event.addListenerOnce(map, 'idle', f);
+        };
+
     };
     tangelo.GoogleMapLayer.prototype = new tangelo.AbstractMapLayer();
 
