@@ -13,9 +13,10 @@
 
     tangelo.GoogleMapLayer = function (element, options) {
         // create a google map inside `element`
-        var map, mapOpts, svg, ready, view, that;
+        var map, mapOpts, ready, view, that, dragStart, dragNow, oldZoom;
         
         that = this;
+        dragStart = null;
 
         // implementing abstract methods
         this.pointToLatLng = function (x, y) {
@@ -34,7 +35,7 @@
             return [pt.x, pt.y];
         };
 
-        this.getBounds = function () {
+        this.bounds = function () {
             var bds, sw, ne;
             bds = map.getBounds();
             sw = bds.getSouthWest();
@@ -59,7 +60,6 @@
 
         // implement LatLngBounds abstract methods here...
 
-
         // all methods are implemented, now start creating the layer
         
         // flag to throw an error if any draw events are fired
@@ -72,13 +72,12 @@
         // generate the map object
         map = new google.maps.Map(element, mapOpts);
 
-        // construct an svg overly and attach it to the map
+        // construct an overly and attach it to the map
         function OverlayView() {
             this.setMap(map);
         }
         OverlayView.prototype = new google.maps.OverlayView();
         OverlayView.prototype.onAdd = function () {
-            svg = this.getPanes().overlayLayer;
             ready = true;
         };
         
@@ -91,16 +90,46 @@
             console.log('draw called in googleMapLayer');
         };
 
-        // finish initializing the layer once the map layer is ready
-        //google.maps.event.addListenerOnce(map, 'idle', function () {
-            view = new OverlayView();
-        //});
+        view = new OverlayView();
         
-        this.onLoad = function () {};
+        // implement event handling
+        google.maps.event.addListenerOnce(map, 'idle', function () {
+            that.getEvent('load').trigger(map, { load: true });
+        });
 
-        this.callOnIdle = function (f) {
-            google.maps.event.addListenerOnce(map, 'idle', f);
+        google.maps.event.addListener(map, 'dragstart', function () {
+            var mouse = map.getCenter();
+            // get the mouse position
+            dragNow = new that.LatLng(mouse.lat(), mouse.lng());
+            dragStart = new that.Point(dragNow.x(), dragNow.y());
+        });
+        
+        google.maps.event.addListener(map, 'dragend', function (evt) {
+            dragStart = null;
+        });
+        
+        google.maps.event.addListener(map, 'drag', function (evt) {
+            var dragDelta;
+            dragStart.reproject();
+            dragNow.reproject();
+            dragDelta = [ dragNow.x() - dragStart.x(), dragNow.y() - dragStart.y() ];
+            that.getEvent('drag').trigger(map, { 
+                drag: true,
+                mouseStart: dragStart,
+                mouseNow: dragNow,
+                dragDelta: dragDelta });
+        });
+
+        google.maps.event.addListener(map, 'zooom_changed', function () {
+            that.getEvent('zoom').trigger(map, { zoom: true, oldZoom: oldZoom, newZoom: map.getZoom() });
+            oldZoom = map.getZoom();
+        });
+
+        this.dragging = function () {
+            return !!dragStart;
         };
+
+        oldZoom = map.getZoom();
 
     };
     tangelo.GoogleMapLayer.prototype = new tangelo.AbstractMapLayer();

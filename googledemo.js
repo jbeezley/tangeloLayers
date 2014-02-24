@@ -1,7 +1,7 @@
 
 /*jslint browser: true*/
 
-(function (tangelo, google, d3) {
+(function (tangelo, google, d3, $) {
     'use strict';
     
     window.onload = function () { 
@@ -16,7 +16,7 @@
         // need to provide a way for layers to report if they are ready or not
         //google.maps.event.addDomListener(window, 'load', function () {
         //
-        gmap.onLoad = function () {
+        gmap.on('load', function () {
                 var svg = d3.select(gmap.addLayer('d3svg'))
                             .append('svg');
                 
@@ -27,7 +27,11 @@
                     .attr('r', 50)
                     .style('fill', 'red')
                     .attr('id', 'd3circle');
-        };
+        });
+
+        gmap.on('drag', function (evt) {
+            console.log('start: ' + evt.mouseStart.toString() + ' now: ' + evt.mouseNow.toString() + ' delta: ' + evt.dragDelta.join());
+        });
     };
 
-}(window.tangelo, window.google, window.d3));
+}(window.tangelo, window.google, window.d3, window.$));

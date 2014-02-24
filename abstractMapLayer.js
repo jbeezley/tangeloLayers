@@ -18,7 +18,8 @@
     // An abstract class defining a mapping layer interface
     tangelo.AbstractMapLayer = function () {
         
-        var layers = {}; // all existing internal layers
+        var layers = {}, // all existing internal layers
+            events = {}; // all events
         
         // an abstract representation of a position on the map
         // contains both pixel and gis coordinates with callbacks
@@ -30,6 +31,9 @@
             this.lat = abstractFunction;
             this.lng = abstractFunction;
             this.reproject = abstractFunction;
+            this.toString = function () {
+                return 'Point(' + [this.x(), this.y()].join() + '), LatLng(' + [this.lng(), this.lat()].join() + ')';
+            };
         };
         
         // a position which is tied to a pixel on the screen
@@ -60,6 +64,7 @@
             };
             this.reproject();
         };
+        this.LatLng.prototype = new this.Position();
         
         // represents a rectangle on the screen, the way it is 
         // implemented the bounds of the map can returned by
@@ -85,6 +90,52 @@
             this.getCenter = abstractFunction;
             this.intersects = abstractFunction;
             this.union = abstractFunction;
+        };
+
+        // event handling infrastructure exposed to allow the possibility to 
+        // register new events inside individual layers
+        this.Event = function (name) {
+            var callbacks = $.Callbacks(),  // call backs are registered here
+                evt = this;
+            
+            this.addCallback = function (f) {
+                callbacks.add(f);
+                return evt;
+            };
+
+            this.trigger = function (context, args) {
+                callbacks.fireWith(context, [args]);
+                return evt;
+            };
+
+            this.removeCallback = function (f) {
+                callbacks.remove(f);
+                return evt;
+            };
+
+        };
+
+        // add standard events
+        events = {
+            drag: new this.Event('drag'), // fired continually during drag events
+            zoom: new this.Event('zoom'), // fired on zoom out/in
+            load: new this.Event('load')  // fired once, when the map is finished loading
+        };
+
+        // add a getter for events
+        this.getEvent = function (eventType) {
+            return events[eventType];
+        };
+
+        // standard mechanism for attaching callbacks to events
+        //   eventType: the named event from the events object
+        //   f: function to call
+        this.on = function (eventType, f) {
+            if (!events.hasOwnProperty(eventType)) {
+                tangelo.fatalError('abstractMapLayer.on', 'Unknown eventType');
+            }
+            events[eventType].addCallback(f);
+            return this;
         };
 
         // Create a new div element for a layer inside the map
@@ -123,6 +174,30 @@
         // in order to properly handle mouse events.
         //   function () { ... return div; }
         this.getInnerDiv = abstractFunction;
+
+        // Subclasses must also trigger the following events, with the
+        // specified call signature:
+        //
+        //   load:  this.events.load.trigger(this, f)
+        //      function f() { {load: true} }
+        //
+        //   zoom:  this.events.zoom.trigger(this, f)
+        //      function f( {zoom: true, oldZoom: x, newZoom: y} )
+        //          zoom factors are given as magnification factors from 
+        //          the default map, so 2x zoomed in would be 2,
+        //          2x zoomed out would be 0.5
+        //
+        //   drag:  this.events.drag.trigger(this, f)
+        //      function f( {drag: true, mouseStart: Position, mouseNow: Position,
+        //                   dragDelta: [dx, dy]} )
+        //          gives the position at the start of the drag and the 
+        //          current mouse position, dragDelta gives the number of pixels
+        //          the map has moved during the drag
+        
+        // Allows layers to query whether a drag event is occuring.
+        //   return true, if dragging
+        //   return false, if not dragging
+        this.dragging = abstractFunction;
     };
 
 }(window.tangelo, window.$));
