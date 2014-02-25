@@ -12,9 +12,10 @@
             mapTypeId: google.maps.MapTypeId.TERRAIN
         };
 
-        var gmap = new tangelo.GoogleMapLayer($('#demoContent')[0], options);
-        
+        //var gmap = new tangelo.GoogleMapLayer($('#demoContent')[0], options);
+        var gmap = new tangelo.OpenLayersMapLayer($('#demoContent')[0]); 
         gmap.on(['load', 'zoom'], function () {
+            console.log('callback');
             var ssvg, msvg, pt0, pt1;
             pt0 = new gmap.Point(250, 250);
             pt1 = new gmap.LatLng(42.8667, -73.8167);

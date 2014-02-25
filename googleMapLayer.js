@@ -44,9 +44,9 @@
             bds = map.getBounds();
             sw = bds.getSouthWest();
             ne = bds.getNorthEast();
-            return new this.LatLngBounds(
-                        new this.LatLng(sw.lat(), sw.lng()),
-                        new this.LatLng(ne.lat(), ne.lng())
+            return new that.LatLngBounds(
+                        new that.LatLng(sw.lat(), sw.lng()),
+                        new that.LatLng(ne.lat(), ne.lng())
                     );
         };
 
@@ -67,6 +67,10 @@
                 view.getPanes().overlayLayer.appendChild(staticDiv);
             }
             return staticDiv;
+        };
+
+        this.loaded = function () {
+            return ready;
         };
 
         // I don't like this part, but I need to give subclasses access to the projection methods

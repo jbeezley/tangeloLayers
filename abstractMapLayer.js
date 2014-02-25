@@ -132,6 +132,7 @@
         //   eventType: the named event from the events object
         //   f: function to call
         this.on = function (eventType, f) {
+            var that = this;
             if (!Array.isArray(eventType)) {
                 eventType = [eventType];
             }
@@ -139,7 +140,11 @@
                 if (!events.hasOwnProperty(e)) {
                     tangelo.fatalError('abstractMapLayer.on', 'Unknown eventType ' + e);
                 }
-                events[e].addCallback(f);
+                if (e === 'load' && that.loaded()) {
+                    f( { load: true } );
+                } else {
+                    events[e].addCallback(f);
+                }
             });
             return this;
         };
@@ -208,6 +213,9 @@
         //   return true, if dragging
         //   return false, if not dragging
         this.dragging = abstractFunction;
+
+        // Returns true if the map is loaded and ready for interaction
+        this.loaded = abstractFunction;
     };
 
 }(window.tangelo, window.$));
