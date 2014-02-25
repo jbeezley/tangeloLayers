@@ -13,8 +13,9 @@
 <script src=abstractMapLayer.js></script>
 <script src=googleMapLayer.js></script>
 <script src=openLayersMapLayer.js></script>
-<script src=googleDemo.js></script>
+<!--script src=googleDemo.js></script-->
 <!--script src=oldemo.js></script-->
+<script src=twomaps.js></script>
 
 <style>
     html, body, #map-canvas, #demoContent {
@@ -25,4 +26,13 @@
 
 </style>
 
-<div id='demoContent' style='height: 100%'></div>
+<table>
+    <tr>
+        <td>
+            <div id='openlayersdiv' style='height: 500px; width: 500px'></div>
+        </td>
+        <td>
+            <div id='googlediv' style='height: 500px; width: 500px'></div>
+        </td>
+    </tr>
+</table>

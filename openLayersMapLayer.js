@@ -19,6 +19,7 @@
         movingLayer = null;
         ready = false;
         that = this;
+        options = options || {};
 
         // implement abstract methods
         this.pointToLatLng = function (x, y) {
@@ -55,6 +56,15 @@
         this.loaded = function () {
             return ready;
         };
+
+        this.setCenter = function (ll) {
+            map.setCenter(new OpenLayers.LonLat(ll.lng(), ll.lat()));
+        };
+
+        this.getCenter = function() {
+            var center = map.getCenter();
+            return new that.LatLng(center.lat, center.lon);
+        };
         
         // create map (following example: http://bl.ocks.org/mbertrand/5218300)
 
@@ -77,9 +87,9 @@
                     layers: 'basic'
                 });
         map.addLayer(wms);
-        map.zoomToMaxExtent();
-        //map.setCenter(new OpenLayers.LonLat(0,0).transform('EPSG:4326', 'EPSG:900913'), 2);
-        oldZoom = map.zoom;
+        //map.zoomToMaxExtent();
+        oldZoom = options.zoom || 2;
+        this.setCenter(options.center || { lat: function () { return 0; }, lng: function () { return 0; } });
 
         // create vector layers
         movingLayer = new OpenLayers.Layer.Vector('movingDiv');
@@ -94,6 +104,7 @@
                 $(staticLayer.div).width(sz.w);
                 $(staticLayer.div).height(sz.h);
                 staticLayer.setZIndex(1000);
+                map.zoomTo(oldZoom);
                 ready = true;
                 that.getEvent('load').trigger(map, { load: true } );
             };

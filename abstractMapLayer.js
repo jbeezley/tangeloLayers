@@ -216,6 +216,9 @@
 
         // Returns true if the map is loaded and ready for interaction
         this.loaded = abstractFunction;
+
+        // Pans the map to be centered at the indicated location
+        this.setCenter = abstractFunction;
     };
 
 }(window.tangelo, window.$));

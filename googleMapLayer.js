@@ -14,13 +14,14 @@
     tangelo.GoogleMapLayer = function (element, options) {
         // create a google map inside `element`
         var map, mapOpts, ready, view, that, dragStart, 
-            dragNow, oldZoom, oldTranslate, movingDiv, staticDiv;
+            dragNow, oldZoom, oldTranslate, movingDiv, staticDiv,
+            divOffset;
         
         that = this;
         dragStart = null;
-        oldTranslate = [0, 0];
         movingDiv = null;
         staticDiv = null;
+        options = options || {};
 
         // implementing abstract methods
         this.pointToLatLng = function (x, y) {
@@ -51,26 +52,40 @@
         };
 
         this.getInnerDiv = function (options) {
+            var offset;
             if (!ready) {
                 tangelo.fatalError('GoogleMapLayer', 'getSVGLayer called before map was loaded');
             }
             options = options || { };
+            if (!movingDiv) {
+                movingDiv = document.createElement('div');
+                view.getPanes().overlayLayer.appendChild(movingDiv);
+            }
             if (options.moving === undefined || options.moving) {
-                if (!movingDiv) {
-                    movingDiv = document.createElement('div');
-                    view.getPanes().overlayLayer.appendChild(movingDiv);
-                }
                 return movingDiv;
             }
             if (!staticDiv) {
                 staticDiv = document.createElement('div');
                 view.getPanes().overlayLayer.appendChild(staticDiv);
+                offset = $(movingDiv).offset();
+                $(staticDiv).css('position', 'absolute');
+                oldTranslate = [0, 0];
+                divOffset = [offset.left, offset.top];
             }
             return staticDiv;
         };
 
         this.loaded = function () {
             return ready;
+        };
+
+        this.getCenter = function () {
+            var center = map.getCenter();
+            return new that.LatLng(center.lat(), center.lng());
+        };
+
+        this.setCenter = function (ll) {
+            map.panTo(new google.maps.LatLng(ll.lat(), ll.lng()));
         };
 
         // I don't like this part, but I need to give subclasses access to the projection methods
@@ -88,6 +103,10 @@
         
         // convert map options for google interface
         mapOpts = options;
+        mapOpts.zoom = mapOpts.zoom || 2;
+        mapOpts.center = mapOpts.center || { lat: function () { return 0; }, lng: function () { return 0; } };
+        mapOpts.center = new google.maps.LatLng(mapOpts.center.lat(), mapOpts.center.lng());
+        mapOpts.mapTypeId = google.maps.MapTypeId.TERRAIN;
 
         // generate the map object
         map = new google.maps.Map(element, mapOpts);
@@ -110,8 +129,8 @@
             idiv = $(staticDiv);
             pos = idiv.offset();
             
-            oldTranslate[0] += -pos.left;
-            oldTranslate[1] += -pos.top;
+            oldTranslate[0] += divOffset[0]-pos.left;
+            oldTranslate[1] += divOffset[1]-pos.top;
 
             idiv.css({transform: 'matrix(1,0,0,1,' + oldTranslate.join() + ')'});
 
