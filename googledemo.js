@@ -19,7 +19,8 @@
         //
         gmap.on('load', function () {
             svg = d3.select(gmap.addLayer('d3svg'))
-                          .append('svg');
+                          .append('svg')
+                            .style('overflow', 'visible');
                 
             pt0 = new gmap.LatLng(0, 0);
             pt0 = new gmap.Point(pt0.x(), pt0.y());
