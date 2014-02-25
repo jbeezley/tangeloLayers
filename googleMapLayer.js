@@ -13,10 +13,12 @@
 
     tangelo.GoogleMapLayer = function (element, options) {
         // create a google map inside `element`
-        var map, mapOpts, ready, view, that, dragStart, dragNow, oldZoom;
+        var map, mapOpts, ready, view, that, dragStart, 
+            dragNow, oldZoom, oldTranslate;
         
         that = this;
         dragStart = null;
+        oldTranslate = [0, 0];
 
         // implementing abstract methods
         this.pointToLatLng = function (x, y) {
@@ -50,7 +52,7 @@
             if (!ready) {
                 tangelo.fatalError('GoogleMapLayer', 'getSVGLayer called before map was loaded');
             }
-            return view.getPanes().overlayMouseTarget;
+            return view.getPanes().overlayLayer;
         };
 
         // I don't like this part, but I need to give subclasses access to the projection methods
@@ -80,15 +82,24 @@
         OverlayView.prototype.onAdd = function () {
             ready = true;
         };
+
+        function updateTranslate() {
+            var idiv, pos;
+            idiv = $(that.getInnerDiv());
+            pos = idiv.offset();
+            
+            oldTranslate[0] += -pos.left;
+            oldTranslate[1] += -pos.top;
+
+            idiv.css({transform: 'matrix(1,0,0,1,' + oldTranslate.join() + ')'});
+
+        }
         
         // attach the overlayView to event callbacks to update embedded layers
         OverlayView.prototype.draw = function () {
-            if (ready && that.onLoad) {
-                that.onLoad();
-                that.onLoad = null;
-            }
-            console.log('draw called in googleMapLayer');
+            updateTranslate();
         };
+
 
         view = new OverlayView();
         
@@ -110,6 +121,7 @@
         
         google.maps.event.addListener(map, 'drag', function (evt) {
             var dragDelta;
+            updateTranslate();
             dragStart.reproject();
             dragNow.reproject();
             dragDelta = [ dragNow.x() - dragStart.x(), dragNow.y() - dragStart.y() ];
