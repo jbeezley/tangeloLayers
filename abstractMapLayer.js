@@ -119,7 +119,8 @@
         events = {
             drag: new this.Event('drag'), // fired continually during drag events
             zoom: new this.Event('zoom'), // fired on zoom out/in
-            load: new this.Event('load')  // fired once, when the map is finished loading
+            load: new this.Event('load'), // fired once, when the map is finished loading
+            draw: new this.Event('draw')  // fired whenever the overlay needs to be redrawn
         };
 
         // add a getter for events
@@ -177,7 +178,8 @@
         
         // For the following, svg/canvas layers need to come from the map
         // in order to properly handle mouse events.
-        //   function () { ... return div; }
+        //   function (options) { ... return div; }
+        //     options.moving: layer drags with the map [default: true]
         this.getInnerDiv = abstractFunction;
 
         // Subclasses must also trigger the following events, with the
@@ -198,6 +200,9 @@
         //          gives the position at the start of the drag and the 
         //          current mouse position, dragDelta gives the number of pixels
         //          the map has moved during the drag
+        //
+        //   draw: this.events.draw.trigger(this, f)
+        //      function f( {draw: true} )
         
         // Allows layers to query whether a drag event is occuring.
         //   return true, if dragging

@@ -13,18 +13,24 @@
         };
 
         var gmap = new tangelo.GoogleMapLayer($('#demoContent')[0], options);
-        var svg, pt0, pt1;
-        // need to provide a way for layers to report if they are ready or not
-        //google.maps.event.addDomListener(window, 'load', function () {
-        //
-        gmap.on('load', function () {
-            svg = d3.select(gmap.addLayer('d3svg'))
-                          .append('svg')
+        
+        gmap.on(['load', 'zoom'], function () {
+            var ssvg, msvg, pt0, pt1;
+            pt0 = new gmap.Point(250, 250);
+            pt1 = new gmap.LatLng(42.8667, -73.8167);
+            d3.select(gmap.getInnerDiv()).selectAll('#movingsvg')
+                    .data([0]).enter()
+                        .append('svg')
+                            .attr('id', 'movingsvg')
                             .style('overflow', 'visible');
-                
-            pt0 = new gmap.LatLng(0, 0);
-            pt0 = new gmap.Point(pt0.x(), pt0.y());
-            svg.selectAll('#stationary')
+            d3.select(gmap.getInnerDiv({moving: false})).selectAll('#staticsvg')
+                    .data([0]).enter()
+                        .append('svg')
+                            .attr('id', 'staticsvg')
+                            .style('overflow', 'visible');
+            msvg = d3.select('#movingsvg');
+            ssvg = d3.select('#staticsvg');
+            ssvg.selectAll('#stationary')
                 .data([pt0]).enter()
               .append('circle')
                 .attr('id', 'stationary')
@@ -32,28 +38,17 @@
                 .attr('cy', function (d) { return d.y(); })
                 .attr('r', 20)
                 .style('fill', 'red');
-            pt1 = new gmap.LatLng(42.8667, -73.8167);
-            svg.selectAll('#moving')
-                  .data([pt1]).enter()
+            var moving = msvg.selectAll('#moving')
+                  .data([pt1.reproject()]);
+            moving.enter()
                 .append('circle')
                 .attr('id', 'moving')
-                .attr('cx', function (d) { return d.x(); })
-                .attr('cy', function (d) { return d.y(); })
                 .attr('r', 20)
                 .style('fill', 'blue');
+            moving
+                .attr('cx', function (d) { return d.x(); })
+                .attr('cy', function (d) { return d.y(); });
         });
-
-        gmap.on('drag', function (evt) {
-            pt1.reproject();
-            svg.selectAll('#moving')
-                .data([pt1])
-              .attr('transform', 'translate(' + evt.dragDelta.join() + ')');
-        });
-        /*
-        gmap.on('drag', function (evt) {
-            console.log('start: ' + evt.mouseStart.toString() + ' now: ' + evt.mouseNow.toString() + ' delta: ' + evt.dragDelta.join());
-        });
-        */
     };
 
 }(window.tangelo, window.google, window.d3, window.$));

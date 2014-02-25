@@ -14,11 +14,13 @@
     tangelo.GoogleMapLayer = function (element, options) {
         // create a google map inside `element`
         var map, mapOpts, ready, view, that, dragStart, 
-            dragNow, oldZoom, oldTranslate;
+            dragNow, oldZoom, oldTranslate, movingDiv, staticDiv;
         
         that = this;
         dragStart = null;
         oldTranslate = [0, 0];
+        movingDiv = null;
+        staticDiv = null;
 
         // implementing abstract methods
         this.pointToLatLng = function (x, y) {
@@ -48,11 +50,23 @@
                     );
         };
 
-        this.getInnerDiv = function () {
+        this.getInnerDiv = function (options) {
             if (!ready) {
                 tangelo.fatalError('GoogleMapLayer', 'getSVGLayer called before map was loaded');
             }
-            return view.getPanes().overlayLayer;
+            options = options || { };
+            if (options.moving === undefined || options.moving) {
+                if (!movingDiv) {
+                    movingDiv = document.createElement('div');
+                    view.getPanes().overlayLayer.appendChild(movingDiv);
+                }
+                return movingDiv;
+            }
+            if (!staticDiv) {
+                staticDiv = document.createElement('div');
+                view.getPanes().overlayLayer.appendChild(staticDiv);
+            }
+            return staticDiv;
         };
 
         // I don't like this part, but I need to give subclasses access to the projection methods
@@ -81,11 +95,15 @@
         OverlayView.prototype = new google.maps.OverlayView();
         OverlayView.prototype.onAdd = function () {
             ready = true;
+            that.getEvent('load').trigger(map, { load: true });
         };
 
         function updateTranslate() {
+            if (!staticDiv) {
+                return;
+            }
             var idiv, pos;
-            idiv = $(that.getInnerDiv());
+            idiv = $(staticDiv);
             pos = idiv.offset();
             
             oldTranslate[0] += -pos.left;
@@ -98,6 +116,7 @@
         // attach the overlayView to event callbacks to update embedded layers
         OverlayView.prototype.draw = function () {
             updateTranslate();
+            that.getEvent('draw').trigger(map, { draw: true });
         };
 
 
@@ -105,6 +124,7 @@
         
         // implement event handling
         google.maps.event.addListenerOnce(map, 'idle', function () {
+            updateTranslate();
             that.getEvent('load').trigger(map, { load: true });
         });
 
@@ -117,6 +137,17 @@
         
         google.maps.event.addListener(map, 'dragend', function (evt) {
             dragStart = null;
+
+            // keep retranslating after the drag stops because
+            // google maps adds momentum to the drag
+            // this still isn't perfect because the layer skips around
+            //
+            // maybe use WebKitMutationObserver, etc... to watch
+            // for transform changes in the parent div?
+            var timer = window.setInterval(updateTranslate, 10);
+            window.setTimeout(function () {
+                window.clearInterval(timer);
+            }, 1000);
         });
         
         google.maps.event.addListener(map, 'drag', function (evt) {
@@ -132,9 +163,14 @@
                 dragDelta: dragDelta });
         });
 
-        google.maps.event.addListener(map, 'zooom_changed', function () {
-            that.getEvent('zoom').trigger(map, { zoom: true, oldZoom: oldZoom, newZoom: map.getZoom() });
-            oldZoom = map.getZoom();
+        google.maps.event.addListener(map, 'zoom_changed', function () {
+            // wait until bounds is updated before triggering
+            var listener = google.maps.event.addListener(map, 'bounds_changed', function () {
+                updateTranslate();
+                that.getEvent('zoom').trigger(map, { zoom: true, oldZoom: oldZoom, newZoom: map.getZoom() });
+                oldZoom = map.getZoom();
+                google.maps.event.removeListener(listener);
+            });
         });
 
         this.dragging = function () {
@@ -142,6 +178,15 @@
         };
 
         oldZoom = map.getZoom();
+
+        this.on('drag', function (evt) {
+            evt.draw = true;
+            that.getEvent('draw').trigger(map, evt);
+        });
+        this.on('zoom', function (evt) {
+            evt.draw = true;
+            that.getEvent('draw').trigger(map, evt);
+        });
 
     };
     tangelo.GoogleMapLayer.prototype = new tangelo.AbstractMapLayer();
