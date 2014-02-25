@@ -131,10 +131,15 @@
         //   eventType: the named event from the events object
         //   f: function to call
         this.on = function (eventType, f) {
-            if (!events.hasOwnProperty(eventType)) {
-                tangelo.fatalError('abstractMapLayer.on', 'Unknown eventType');
+            if (!Array.isArray(eventType)) {
+                eventType = [eventType];
             }
-            events[eventType].addCallback(f);
+            eventType.forEach(function (e) {
+                if (!events.hasOwnProperty(e)) {
+                    tangelo.fatalError('abstractMapLayer.on', 'Unknown eventType ' + e);
+                }
+                events[e].addCallback(f);
+            });
             return this;
         };
 
