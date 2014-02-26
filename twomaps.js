@@ -48,16 +48,6 @@
             moving
                 .attr('cx', function (d) { return d.x(); })
                 .attr('cy', function (d) { return d.y(); });
-            moving = msvg.selectAll('#rect')
-                    .data([0]);
-            moving.enter().append('rect')
-                .style('fill', 'black')
-                .style('fill-opacity', '0.1')
-                .attr('id', 'rect')
-                .attr('x', 0)
-                .attr('y', 0)
-                .attr('width', 500)
-                .attr('height', 500);
         });
     }
 
