@@ -23,6 +23,21 @@
         staticDiv = null;
         options = options || {};
 
+        function updateTranslate() {
+            if (!staticDiv) {
+                return;
+            }
+            var idiv, pos;
+            idiv = $(staticDiv);
+            pos = idiv.offset();
+            
+            oldTranslate[0] += divOffset[0]-pos.left;
+            oldTranslate[1] += divOffset[1]-pos.top;
+
+            idiv.css({transform: 'matrix(1,0,0,1,' + oldTranslate.join() + ')'});
+
+        }
+        
         // implementing abstract methods
         this.pointToLatLng = function (x, y) {
             var proj, pt, latlng;
@@ -36,7 +51,7 @@
             var proj, pt, latlng;
             proj = view.getProjection();
             latlng = new google.maps.LatLng(lat, lng);
-            pt = proj.fromLatLngToContainerPixel(latlng);
+            pt = proj.fromLatLngToDivPixel(latlng);
             return [pt.x, pt.y];
         };
 
@@ -86,6 +101,7 @@
 
         this.setCenter = function (ll) {
             map.panTo(new google.maps.LatLng(ll.lat(), ll.lng()));
+            updateTranslate();
         };
 
         // I don't like this part, but I need to give subclasses access to the projection methods
@@ -121,21 +137,6 @@
             that.getEvent('load').trigger(map, { load: true });
         };
 
-        function updateTranslate() {
-            if (!staticDiv) {
-                return;
-            }
-            var idiv, pos;
-            idiv = $(staticDiv);
-            pos = idiv.offset();
-            
-            oldTranslate[0] += divOffset[0]-pos.left;
-            oldTranslate[1] += divOffset[1]-pos.top;
-
-            idiv.css({transform: 'matrix(1,0,0,1,' + oldTranslate.join() + ')'});
-
-        }
-        
         // attach the overlayView to event callbacks to update embedded layers
         OverlayView.prototype.draw = function () {
             updateTranslate();
@@ -187,13 +188,17 @@
         });
 
         google.maps.event.addListener(map, 'zoom_changed', function () {
+            updateTranslate();
             // wait until bounds is updated before triggering
             var listener = google.maps.event.addListener(map, 'bounds_changed', function () {
-                updateTranslate();
                 that.getEvent('zoom').trigger(map, { zoom: true, oldZoom: oldZoom, newZoom: map.getZoom() });
                 oldZoom = map.getZoom();
                 google.maps.event.removeListener(listener);
             });
+        });
+
+        google.maps.event.addListener(map, 'idle', function () {
+            updateTranslate();
         });
 
         this.dragging = function () {

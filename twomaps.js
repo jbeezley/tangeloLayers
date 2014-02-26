@@ -5,19 +5,30 @@
 
     function makeMap(map) {
         map.on(['load', 'zoom'], function () {
-            console.log('callback');
             var pt0, pt1;
             pt0 = new map.Point(250, 250);
             pt1 = new map.LatLng(42.8667, -73.8167);
             var msvg = d3.select(map.getInnerDiv()).selectAll('#movingsvg')
-                    .data([0]).enter()
+                    .data([0]);
+        // svg needs to be bigger because overflow doesn't seem to work always
+        // see: http://stackoverflow.com/questions/11909099/overlay-d3-paths-onto-google-maps
+            msvg.enter()
                         .append('svg')
                             .attr('id', 'movingsvg')
+                            .attr('width', 8000)
+                            .attr('height', 8000)
+                            .attr('top', -4000)
+                            .attr('left', -4000)
                             .style('overflow', 'visible');
             var ssvg = d3.select(map.getInnerDiv({moving: false})).selectAll('#staticsvg')
-                    .data([0]).enter()
+                    .data([0]);
+            ssvg.enter()
                         .append('svg')
                             .attr('id', 'staticsvg')
+                            .attr('width', 8000)
+                            .attr('height', 8000)
+                            .attr('top', -4000)
+                            .attr('left', -4000)
                             .style('overflow', 'visible');
             ssvg.selectAll('#stationary')
                 .data([pt0]).enter()
@@ -28,7 +39,7 @@
                 .attr('r', 20)
                 .style('fill', 'red');
             var moving = msvg.selectAll('#moving')
-                  .data([pt1.reproject()]);
+                  .data([pt1]);
             moving.enter()
                 .append('circle')
                 .attr('id', 'moving')
@@ -37,6 +48,16 @@
             moving
                 .attr('cx', function (d) { return d.x(); })
                 .attr('cy', function (d) { return d.y(); });
+            moving = msvg.selectAll('#rect')
+                    .data([0]);
+            moving.enter().append('rect')
+                .style('fill', 'black')
+                .style('fill-opacity', '0.1')
+                .attr('id', 'rect')
+                .attr('x', 0)
+                .attr('y', 0)
+                .attr('width', 500)
+                .attr('height', 500);
         });
     }
 

@@ -12,7 +12,7 @@
     }
 
     tangelo.OpenLayersMapLayer = function (element, options) {
-        var map, proj, displayProj, wms, that,
+        var map, wms, that,
             staticLayer, movingLayer, ready, oldZoom;
         
         staticLayer = null;
@@ -23,12 +23,12 @@
 
         // implement abstract methods
         this.pointToLatLng = function (x, y) {
-            var ll = map.getLonLatFromPixel(new OpenLayers.Pixel(x, y));
+            var ll = movingLayer.getLonLatFromViewPortPx(new OpenLayers.Pixel(x, y));
             return [ll.lat, ll.lon];
         };
 
         this.latLngToPoint = function (lat, lng) {
-            var pt = map.getPixelFromLonLat(new OpenLayers.LonLat(lng, lat));
+            var pt = movingLayer.getViewPortPxFromLonLat(new OpenLayers.LonLat(lng, lat));
             return [pt.x, pt.y];
         };
         
@@ -68,8 +68,6 @@
         
         // create map (following example: http://bl.ocks.org/mbertrand/5218300)
 
-        proj = new OpenLayers.Projection("EPSG:900913");
-        displayProj = new OpenLayers.Projection("EPSG:4326");
         map = new OpenLayers.Map(element, {
             numZoomLevels: 20,
             controls: [
@@ -80,7 +78,6 @@
                 new OpenLayers.Control.KeyboardDefaults()
             ]
         });
-        proj = map.getProjectionObject();
         wms = new OpenLayers.Layer.WMS(
                 'OpenLayers WMS',
                 "http://vmap0.tiles.osgeo.org/wms/vmap0", {
@@ -90,6 +87,7 @@
         //map.zoomToMaxExtent();
         oldZoom = options.zoom || 2;
         this.setCenter(options.center || { lat: function () { return 0; }, lng: function () { return 0; } });
+        map.zoomTo(oldZoom);
 
         // create vector layers
         movingLayer = new OpenLayers.Layer.Vector('movingDiv');
@@ -104,11 +102,14 @@
                 $(staticLayer.div).width(sz.w);
                 $(staticLayer.div).height(sz.h);
                 staticLayer.setZIndex(1000);
-                map.zoomTo(oldZoom);
                 ready = true;
-                that.getEvent('load').trigger(map, { load: true } );
+                //that.getEvent('load').trigger(map, { load: true } );
             };
             map.addLayer(staticLayer);
+            staticLayer.events.register('loadend', map, function () {
+                that.getEvent('load').trigger(map, { load: true } );
+            });
+        
         };
         map.addLayer(movingLayer);
         
