@@ -14,21 +14,20 @@
         // see: http://stackoverflow.com/questions/11909099/overlay-d3-paths-onto-google-maps
             msvg.enter()
                         .append('svg')
-                            .attr('id', 'movingsvg')
                             .attr('width', 8000)
                             .attr('height', 8000)
-                            .attr('top', -4000)
-                            .attr('left', -4000)
+                            .style('position', 'absolute')
+                            .style('top', -4000)
+                            .style('left', -4000)
+                        .append('g')
+                            .attr('id', 'movingsvg')
+                            .attr('transform', 'translate(4000, 4000)')
                             .style('overflow', 'visible');
             var ssvg = d3.select(map.getInnerDiv({moving: false})).selectAll('#staticsvg')
                     .data([0]);
             ssvg.enter()
                         .append('svg')
                             .attr('id', 'staticsvg')
-                            .attr('width', 8000)
-                            .attr('height', 8000)
-                            .attr('top', -4000)
-                            .attr('left', -4000)
                             .style('overflow', 'visible');
             ssvg.selectAll('#stationary')
                 .data([pt0]).enter()
@@ -67,6 +66,15 @@
 
         makeMap(openLayersMap);
         makeMap(googleMap);
+        
+        function syncZoom(evt) {
+            if (evt.newZoom !== openLayersMap.getZoom()) {
+                openLayersMap.setZoom(evt.newZoom);
+            }
+            if (evt.newZoom !== googleMap.getZoom()) {
+                googleMap.setZoom(evt.newZoom);
+            }
+        }
 
         openLayersMap.on(['drag', 'zoom'], function () {
             var center = openLayersMap.getCenter();
@@ -77,6 +85,10 @@
             var center = googleMap.getCenter();
             openLayersMap.setCenter(center);
         });
+        
+        openLayersMap.on('zoom', syncZoom);
+        googleMap.on('zoom', syncZoom);
+
     };
 
 }(window.tangelo, window.d3, window.$));

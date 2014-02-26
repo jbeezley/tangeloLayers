@@ -104,6 +104,14 @@
             updateTranslate();
         };
 
+        this.getZoom = function () {
+            return oldZoom;
+        };
+
+        this.setZoom = function (zoom) {
+            map.setZoom(zoom);
+        };
+
         // I don't like this part, but I need to give subclasses access to the projection methods
         // there is probably a better way
         this.Point.prototype.pointToLatLng = this.pointToLatLng;
@@ -191,8 +199,9 @@
             updateTranslate();
             // wait until bounds is updated before triggering
             var listener = google.maps.event.addListener(map, 'bounds_changed', function () {
-                that.getEvent('zoom').trigger(map, { zoom: true, oldZoom: oldZoom, newZoom: map.getZoom() });
+                var tmp = oldZoom;
                 oldZoom = map.getZoom();
+                that.getEvent('zoom').trigger(map, { zoom: true, oldZoom: tmp, newZoom: map.getZoom() });
                 google.maps.event.removeListener(listener);
             });
         });

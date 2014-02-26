@@ -65,6 +65,14 @@
             var center = map.getCenter();
             return new that.LatLng(center.lat, center.lon);
         };
+
+        this.setZoom = function (zoom) {
+            map.zoomTo(zoom);
+        };
+
+        this.getZoom = function () {
+            return oldZoom;
+        };
         
         // create map (following example: http://bl.ocks.org/mbertrand/5218300)
 
@@ -115,8 +123,9 @@
         
         // add event handlers
         map.events.register('zoomend', map, function () {
-            that.getEvent('zoom').trigger(map, { zoom: true, oldZoom: oldZoom, newZoom: map.zoom });
+            var tmp = oldZoom;
             oldZoom = map.zoom;
+            that.getEvent('zoom').trigger(map, { zoom: true, oldZoom: tmp, newZoom: map.zoom });
         });
 
         map.events.register('move', map, function (evt) {
