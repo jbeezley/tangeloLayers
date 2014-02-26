@@ -119,8 +119,7 @@
         events = {
             drag: new this.Event('drag'), // fired continually during drag events
             zoom: new this.Event('zoom'), // fired on zoom out/in
-            load: new this.Event('load'), // fired once, when the map is finished loading
-            draw: new this.Event('draw')  // fired whenever the overlay needs to be redrawn
+            load: new this.Event('load')  // fired once, when the map is finished loading
         };
 
         // add a getter for events
@@ -195,9 +194,6 @@
         //
         //   zoom:  this.events.zoom.trigger(this, f)
         //      function f( {zoom: true, oldZoom: x, newZoom: y} )
-        //          zoom factors are given as magnification factors from 
-        //          the default map, so 2x zoomed in would be 2,
-        //          2x zoomed out would be 0.5
         //
         //   drag:  this.events.drag.trigger(this, f)
         //      function f( {drag: true, mouseStart: Position, mouseNow: Position,
@@ -205,9 +201,6 @@
         //          gives the position at the start of the drag and the 
         //          current mouse position, dragDelta gives the number of pixels
         //          the map has moved during the drag
-        //
-        //   draw: this.events.draw.trigger(this, f)
-        //      function f( {draw: true} )
         
         // Allows layers to query whether a drag event is occuring.
         //   return true, if dragging
@@ -218,7 +211,20 @@
         this.loaded = abstractFunction;
 
         // Pans the map to be centered at the indicated location
+        // takes a this.LatLng object as an argument
         this.setCenter = abstractFunction;
+
+        // Returns the coordinates of the center of the map as a
+        // this.LatLng object.
+        this.getCenter = abstractFunction;
+
+        // Zooms the map to the indicated zoom level
+        // takes an integer as input... the zoom level will be
+        // truncated to the nearest valid zoom level
+        this.setZoom = abstractFunction;
+
+        // Returns the current zoom level of the map
+        this.getZoom = abstractFunction;
     };
 
 }(window.tangelo, window.$));

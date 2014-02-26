@@ -148,7 +148,6 @@
         // attach the overlayView to event callbacks to update embedded layers
         OverlayView.prototype.draw = function () {
             updateTranslate();
-            that.getEvent('draw').trigger(map, { draw: true });
         };
 
 
@@ -215,15 +214,6 @@
         };
 
         oldZoom = map.getZoom();
-
-        this.on('drag', function (evt) {
-            evt.draw = true;
-            that.getEvent('draw').trigger(map, evt);
-        });
-        this.on('zoom', function (evt) {
-            evt.draw = true;
-            that.getEvent('draw').trigger(map, evt);
-        });
 
     };
     tangelo.GoogleMapLayer.prototype = new tangelo.AbstractMapLayer();
