@@ -8,21 +8,22 @@
             var pt0, pt1;
             pt0 = new map.Point(250, 250);
             pt1 = new map.LatLng(42.8667, -73.8167);
-            var msvg = d3.select(map.getInnerDiv()).selectAll('#movingsvg')
-                    .data([0]);
         // svg needs to be bigger because overflow doesn't seem to work always
         // see: http://stackoverflow.com/questions/11909099/overlay-d3-paths-onto-google-maps
-            msvg.enter()
+            d3.select(map.getInnerDiv()).selectAll('#movingsvg')
+                    .data([0]).enter()
                         .append('svg')
-                            .attr('width', 8000)
-                            .attr('height', 8000)
-                            .style('position', 'absolute')
-                            .style('top', -4000)
-                            .style('left', -4000)
-                        .append('g')
                             .attr('id', 'movingsvg')
-                            .attr('transform', 'translate(4000, 4000)')
-                            .style('overflow', 'visible');
+                            .style('overflow', 'visible')
+                            .attr('width', '8000px')
+                            .attr('height', '8000px')
+                            .style('position', 'absolute')
+                            .style('top', '-4000px')
+                            .style('left', '-4000px')
+                        .append('g')
+                            .attr('id', 'translategroup')
+                            .attr('transform', 'translate(4000, 4000)');
+            var msvg = d3.select(map.getInnerDiv()).select('#translategroup');
             var ssvg = d3.select(map.getInnerDiv({moving: false})).selectAll('#staticsvg')
                     .data([0]);
             ssvg.enter()
